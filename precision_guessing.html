@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Precision Guessing: Midnight Edition</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Space+Grotesk:wght@300..700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0f1113;
+            --paper: #f4f1ea;
+            --accent: #d4af37;
+            /* Gold */
+            --text-dark: #1a1c1e;
+            --text-light: #f4f1ea;
+            --transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background-color: var(--bg);
+            color: var(--text-light);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            /* Film Grain Effect */
+            background-image: url("https://www.transparenttextures.com/patterns/carbon-fibre.png");
+        }
+
+        /* Ambient background glow */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            width: 80vw;
+            height: 80vh;
+            background: radial-gradient(circle, rgba(212, 175, 55, 0.05) 0%, transparent 70%);
+            transform: translate(-50%, -50%);
+            z-index: -1;
+        }
+
+        /* --- Header --- */
+        .header {
+            position: absolute;
+            top: 60px;
+            text-align: center;
+            letter-spacing: 0.5em;
+            text-transform: uppercase;
+            font-weight: 300;
+            opacity: 0.6;
+            font-size: 0.8rem;
+        }
+
+        /* --- Main Card --- */
+        .stage {
+            perspective: 1000px;
+            width: 100%;
+            max-width: 1000px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .card {
+            background-color: var(--paper);
+            color: var(--text-dark);
+            padding: 80px;
+            width: 90%;
+            min-height: 500px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            box-shadow: 0 40px 100px rgba(0, 0, 0, 0.8);
+            transform-origin: center bottom;
+            transition: var(--transition);
+        }
+
+        /* Vintage paper texture */
+        .card::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image: url("https://www.transparenttextures.com/patterns/stardust.png");
+            opacity: 0.2;
+            pointer-events: none;
+        }
+
+        /* Decorative border */
+        .card-inner {
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            position: absolute;
+            inset: 20px;
+            pointer-events: none;
+        }
+
+        .question {
+            font-family: 'Playfair Display', serif;
+            font-size: 3.5rem;
+            line-height: 1.2;
+            font-weight: 700;
+            margin-bottom: 40px;
+            max-width: 800px;
+            font-style: italic;
+        }
+
+        /* --- Answer Reveal --- */
+        .answer-box {
+            height: 120px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .answer-label {
+            font-size: 0.7rem;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: var(--transition);
+        }
+
+        .answer-value {
+            font-size: 5rem;
+            font-weight: 800;
+            color: var(--accent);
+            opacity: 0;
+            transform: scale(0.9);
+            filter: blur(10px);
+            transition: var(--transition);
+        }
+
+        .revealed .answer-label {
+            opacity: 0.4;
+            transform: translateY(0);
+        }
+
+        .revealed .answer-value {
+            opacity: 1;
+            transform: scale(1);
+            filter: blur(0);
+        }
+
+        /* --- Footer --- */
+        .footer {
+            position: absolute;
+            bottom: 60px;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 60px;
+            font-size: 0.8rem;
+            opacity: 0.4;
+            letter-spacing: 0.2em;
+        }
+
+        .controls-hint {
+            text-transform: uppercase;
+        }
+
+        .exit-btn {
+            position: fixed;
+            top: 60px;
+            right: 60px;
+            color: var(--text-light);
+            text-decoration: none;
+            font-size: 0.7rem;
+            letter-spacing: 0.3em;
+            opacity: 0.4;
+            transition: var(--transition);
+            z-index: 1100;
+        }
+
+        .exit-btn:hover {
+            opacity: 1;
+            color: var(--accent);
+        }
+
+        /* --- Transitions --- */
+        .slide-out {
+            transform: translateY(-50px) rotateX(10deg);
+            opacity: 0;
+        }
+
+        .slide-in {
+            animation: slideIn 0.8s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(100px) rotateX(-20deg);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0) rotateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* --- Start Screen --- */
+        #splash {
+            position: fixed;
+            inset: 0;
+            background: var(--bg);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .splash-brand {
+            font-size: 0.6rem;
+            letter-spacing: 0.5em;
+            opacity: 0.3;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+        }
+
+        .splash-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 6rem;
+            font-weight: 200;
+            letter-spacing: -0.02em;
+            margin-bottom: 40px;
+        }
+
+        .splash-title span {
+            color: var(--accent);
+            font-style: italic;
+        }
+
+        .start-btn {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: var(--text-light);
+            padding: 15px 40px;
+            font-family: inherit;
+            font-size: 0.9rem;
+            letter-spacing: 0.4em;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .start-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+
+<body>
+    <a href="index.html" class="exit-btn">EXIT TO DASHBOARD</a>
+
+    <div id="splash">
+        <div class="splash-brand">POÉTHRA PRESENTS</div>
+        <h1 class="splash-title">Precision <span>Guessing</span></h1>
+        <button class="start-btn" onclick="begin()">ENTER THE SUITE</button>
+    </div>
+
+    <div class="header">EST. 2025 • MIDNIGHT COLLECTION</div>
+
+    <div class="stage hidden" id="game">
+        <div class="card" id="card">
+            <div class="card-inner"></div>
+            <div class="question" id="q-text">
+                How many people live in India (2025 est.)?
+            </div>
+            <div class="answer-box">
+                <div class="answer-label">Official Specification</div>
+                <div class="answer-value" id="a-text">1,430,000,000</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer hidden" id="footer">
+        <div class="counter" id="progress">ITEM 01 / 20</div>
+        <div class="controls-hint">[SPACE] REVEAL • [→] CONTINUE</div>
+    </div>
+
+    <script>
+        const questions = [
+            { q: "How many people live in India (2025 est.)?", a: "1,430,000,000" },
+            { q: "How many kilometers long is the Great Wall of China?", a: "21,196 km" },
+            { q: "How many minutes are there in a year?", a: "525,600" },
+            { q: "How many countries are there in the world?", a: "195" },
+            { q: "How many satellites are currently orbiting Earth?", a: "~8,000" },
+            { q: "What was the budget of Avengers: Endgame (USD)?", a: "$356,000,000" },
+            { q: "How many Harry Potter books have been sold worldwide?", a: "~600,000,000" },
+            { q: "How many hours of video are uploaded to YouTube every minute?", a: "~500 hours" },
+            { q: "How many movies are released globally each year (approx.)?", a: "~9,000" },
+            { q: "How many people watched the 2022 FIFA World Cup Final live (global)?", a: "~1.5 billion" },
+            { q: "How many words are in Shakespeare’s complete works (approx.)?", a: "884,000" },
+            { q: "How many books does the average library hold (global avg.)?", a: "~100,000" },
+            { q: "How many pages is the longest novel ever written?", a: "~4,200 pages" },
+            { q: "How many LEGO bricks are made every year?", a: "~36,000,000,000" },
+            { q: "How many emails are sent worldwide every day?", a: "~333,000,000,000" },
+            { q: "How many cups of coffee are consumed globally each day?", a: "~2,250,000,000" },
+            { q: "How many tennis balls are used at Wimbledon each year?", a: "~54,000" },
+            { q: "How many photos are uploaded to Instagram per day?", a: "~95,000,000" },
+            { q: "How many pizzas are eaten in the U.S. each day?", a: "~13,000,000" },
+            { q: "How many heartbeats does the average human have in a lifetime?", a: "~2,500,000,000" }
+        ];
+
+        let currentIdx = 0;
+        let isRevealed = false;
+
+        function begin() {
+            document.getElementById('splash').classList.add('hidden');
+            document.getElementById('game').classList.remove('hidden');
+            document.getElementById('footer').classList.remove('hidden');
+            load(0);
+        }
+
+        function load(idx) {
+            const data = questions[idx];
+            const card = document.getElementById('card');
+
+            // Exit animation
+            card.classList.add('slide-out');
+
+            setTimeout(() => {
+                document.getElementById('q-text').textContent = data.q;
+                document.getElementById('a-text').textContent = data.a;
+                document.getElementById('progress').textContent = `ITEM ${String(idx + 1).padStart(2, '0')} / 20`;
+
+                card.classList.remove('revealed', 'slide-out');
+                card.classList.add('slide-in');
+
+                setTimeout(() => card.classList.remove('slide-in'), 800);
+                isRevealed = false;
+            }, 300);
+        }
+
+        function reveal() {
+            if (isRevealed) return;
+            document.getElementById('card').classList.add('revealed');
+            isRevealed = true;
+        }
+
+        function next() {
+            if (currentIdx < questions.length - 1) {
+                currentIdx++;
+                load(currentIdx);
+            } else {
+                alert("The collection is complete. Returning to start.");
+                location.reload();
+            }
+        }
+
+        document.addEventListener('keydown', (e) => {
+            const splashHidden = document.getElementById('splash').classList.contains('hidden');
+            if (!splashHidden) return;
+
+            if (e.code === 'Space' || e.key === 'ArrowDown') {
+                e.preventDefault();
+                reveal();
+            } else if (e.key === 'ArrowRight') {
+                next();
+            } else if (e.key === 'Escape') {
+                location.reload();
+            }
+        });
+    </script>
+</body>
+
+</html>

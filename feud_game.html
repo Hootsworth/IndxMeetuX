@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poéthra Feud</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Oswald:wght@700&family=Inter:wght@400;700&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a2a4c;
+            color: #f1f1f1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .game-title {
+            font-family: 'Bebas Neue', sans-serif;
+            letter-spacing: 0.1em;
+            color: #fde047;
+            /* yellow-300 */
+        }
+
+        .board-wrapper {
+            background-color: #0c153b;
+            border-radius: 20px;
+            padding: 1.5rem 2rem;
+            border: 4px solid #a5b4fc;
+            width: 100%;
+            max-width: 900px;
+        }
+
+        .question-text {
+            font-family: 'Oswald', sans-serif;
+            text-align: center;
+            color: #e0e7ff;
+            margin-bottom: 1rem;
+            font-size: 2.25rem;
+            line-height: 1.2;
+        }
+
+        /* --- Flip Animation --- */
+        .answer-slot .flipper {
+            transition: transform 0.8s;
+            transform-style: preserve-3d;
+            position: relative;
+        }
+
+        .answer-slot.revealed .flipper {
+            transform: rotateY(180deg);
+        }
+
+        .front,
+        .back {
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            border-radius: 0.375rem;
+        }
+
+        .front {
+            z-index: 2;
+            transform: rotateY(0deg);
+            background-color: #1e3a8a;
+            border: 2px solid #3b82f6;
+            justify-content: center;
+        }
+
+        .back {
+            transform: rotateY(180deg);
+            background-color: #e0e7ff;
+            border: 2px solid #a5b4fc;
+            justify-content: space-between;
+            font-family: 'Oswald', sans-serif;
+            text-transform: uppercase;
+            color: #1e3a8a;
+            padding: 0 1rem;
+        }
+
+        .answer-slot {
+            height: 60px;
+        }
+
+        .answer-slot>.flipper,
+        .answer-slot>.flipper>.front,
+        .answer-slot>.flipper>.back {
+            height: 100%;
+        }
+
+        .team-score-box {
+            background-color: #0c153b;
+            border: 4px solid #a5b4fc;
+            border-radius: 1rem;
+            padding: 1rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .team-score-box.active-team {
+            border-color: #fde047;
+            background-color: #1e293b;
+        }
+
+        .team-score-box h3 {
+            font-family: 'Bebas Neue', sans-serif;
+            letter-spacing: 0.1em;
+            color: #c7d2fe;
+            font-size: 1.5rem;
+        }
+
+        .team-score-box .score {
+            font-family: 'Oswald', sans-serif;
+            font-size: 4rem;
+            line-height: 1;
+            color: #f1f5f9;
+        }
+
+        #big-x-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+            z-index: 999;
+            opacity: 0;
+            transition: opacity 0.2s ease-in-out;
+            pointer-events: none;
+        }
+
+        #big-x-overlay.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        #big-x-overlay span {
+            font-family: 'Oswald', sans-serif;
+            font-size: 30vw;
+            color: #dc2626;
+            /* red-600 */
+            text-shadow: 4px 4px 0 #7f1d1d;
+            /* red-900 */
+            transform: scale(0.5);
+            opacity: 0;
+            animation: zoom-in 0.5s forwards;
+        }
+
+        @keyframes zoom-in {
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        /* --- Fullscreen Overlays --- */
+        .fullscreen-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #1a2a4c;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            transition: opacity 0.5s ease-out;
+        }
+
+        #start-overlay {
+            z-index: 1002;
+        }
+
+        #intro-overlay {
+            z-index: 1001;
+            cursor: pointer;
+        }
+
+        #game-over-overlay {
+            z-index: 1000;
+        }
+
+        #steal-overlay {
+            z-index: 1000;
+        }
+
+        .overlay-box {
+            width: 90vw;
+            max-width: 800px;
+            background-color: #0c153b;
+            border-radius: 20px;
+            padding: 3rem 2rem;
+            border: 4px solid #a5b4fc;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .title-part1 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: clamp(3rem, 12vw, 8rem);
+            color: #e0e7ff;
+            letter-spacing: 0.1em;
+        }
+
+        .title-part2 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: clamp(4rem, 15vw, 10rem);
+            color: #fde047;
+            margin-top: -2%;
+        }
+
+        #start-prompt {
+            margin-top: 2rem;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2rem;
+            color: #f1f1f1;
+            letter-spacing: 0.1em;
+            animation: blink 1.5s infinite;
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.3;
+            }
+        }
+
+        #start-btn {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 3rem;
+            color: #1e3a8a;
+            background-color: #fde047;
+            padding: 1rem 3rem;
+            border-radius: 1rem;
+            border: 4px solid #facc15;
+            cursor: pointer;
+            letter-spacing: 0.1em;
+            transition: all 0.2s ease-in-out;
+        }
+
+        #start-btn:hover {
+            transform: scale(1.05);
+            background-color: #fef08a;
+        }
+
+        #winner-text {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: clamp(4rem, 15vw, 10rem);
+            color: #fde047;
+        }
+
+        #final-scores-text {
+            font-family: 'Oswald', sans-serif;
+            font-size: 2rem;
+            color: #e0e7ff;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-900">
+    <a href="index.html"
+        style="position: fixed; top: 20px; left: 20px; color: #f1f1f1; text-decoration: none; font-size: 1rem; opacity: 0.6; z-index: 1003; font-family: 'Inter', sans-serif; transition: opacity 0.2s;"
+        onmouseover="this.style.opacity='1'; this.style.color='#fde047'"
+        onmouseout="this.style.opacity='0.6'; this.style.color='#f1f1f1'">← Dashboard</a>
+
+    <div id="start-overlay" class="fullscreen-overlay">
+        <button id="start-btn">Start Game</button>
+    </div>
+
+    <div id="intro-overlay" class="fullscreen-overlay hidden">
+        <div class="overlay-box">
+            <div class="title-part1">POÉTHRA</div>
+            <div class="title-part2">FEUD</div>
+        </div>
+        <p id="start-prompt">Click Anywhere to Start</p>
+    </div>
+
+    <div id="game-over-overlay" class="fullscreen-overlay hidden">
+        <div class="overlay-box">
+            <h2 id="winner-text">TEAM 1 WINS!</h2>
+            <p id="final-scores-text">150 - 120</p>
+        </div>
+    </div>
+
+    <div id="steal-overlay" class="fullscreen-overlay hidden">
+        <div class="overlay-box">
+            <h2 id="steal-team-text" class="title-part1">TEAM 2</h2>
+            <p class="title-part2" style="font-size: clamp(3rem, 12vw, 8rem);">STEAL!</p>
+            <p class="mt-4 text-2xl text-white font-semibold">Guess one remaining answer to win the round!</p>
+        </div>
+    </div>
+
+
+    <div id="big-x-overlay">
+    </div>
+
+    <div id="game-container" class="container mx-auto p-4 flex flex-col items-center gap-4 w-full hidden">
+        <h1 class="game-title text-8xl md:text-9xl font-bold">POÉTHRA FEUD</h1>
+
+        <div class="w-full flex justify-center items-start gap-6">
+            <div id="team-1-box" class="team-score-box w-52 hidden md:block">
+                <h3>Team 1</h3>
+                <p id="team-1-score" class="score">0</p>
+            </div>
+
+            <div class="board-wrapper">
+                <div id="question-text" class="question-text">Loading question...</div>
+                <div class="text-center mb-4">
+                    <h3 class="text-2xl text-indigo-300 font-semibold"
+                        style="font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.1em;">ROUND SCORE</h3>
+                    <p id="round-score" class="text-7xl font-bold text-white"
+                        style="font-family: 'Oswald', sans-serif;">0</p>
+                </div>
+                <div id="answer-board" class="flex justify-center gap-4"></div>
+            </div>
+
+            <div id="team-2-box" class="team-score-box w-52 hidden md:block">
+                <h3>Team 2</h3>
+                <p id="team-2-score" class="score">0</p>
+            </div>
+        </div>
+
+        <button id="next-round-btn"
+            class="mt-4 bg-yellow-400 hover:bg-yellow-300 text-slate-800 font-bold py-3 px-8 rounded-lg shadow-lg transition-transform transform hover:scale-105 text-xl"
+            style="display: none;">
+            Next Round
+        </button>
+
+        <footer class="mt-2 text-sm text-indigo-300">
+            <p>Reveal: 1-8 | Wrong: 0 or X | Switch Teams: CTRL + 0</p>
+            <p class="mt-2 opacity-40 font-bold" style="letter-spacing: 0.2em;">POÉTHRA</p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const gameRounds = [
+                {
+
+                    question: "Name Something College Students Stay Up Late Doing",
+                    answers: [
+                        { id: 1, text: "Studying / Assignments", points: 27 },
+                        { id: 2, text: "Scrolling Social Media", points: 22 },
+                        { id: 3, text: "Watching Netflix / YouTube", points: 17 },
+                        { id: 4, text: "Gaming", points: 11 },
+                        { id: 5, text: "Talking to Friends", points: 9 },
+                        { id: 6, text: "Overthinking", points: 7 },
+                        { id: 7, text: "Partying", points: 5 },
+                        { id: 8, text: "Procrastinating", points: 2 },
+                    ]
+                },
+                {
+                    question: "Name Something Students Complain About the Most",
+                    answers: [
+                        { id: 1, text: "Assignments", points: 25 },
+                        { id: 2, text: "Exams", points: 21 },
+                        { id: 3, text: "Professors", points: 16 },
+                        { id: 4, text: "Timetable", points: 13 },
+                        { id: 5, text: "Attendance Rules", points: 10 },
+                        { id: 6, text: "Group Projects", points: 8 },
+                        { id: 7, text: "Campus Food", points: 5 },
+                        { id: 8, text: "Fees", points: 2 },
+                    ]
+                },
+                {
+                    question: "Name Something You Always Carry in Your Backpack",
+                    answers: [
+                        { id: 1, text: "Phone Charger", points: 23 },
+                        { id: 2, text: "Notebook", points: 19 },
+                        { id: 3, text: "Water Bottle", points: 17 },
+                        { id: 4, text: "Headphones", points: 14 },
+                        { id: 5, text: "Snacks", points: 11 },
+                        { id: 6, text: "Pen", points: 8 },
+                        { id: 7, text: "Laptop", points: 6 },
+                        { id: 8, text: "ID Card", points: 2 },
+                    ]
+                },
+                {
+                    question: "Name a Reason a Student Might Skip Class",
+                    answers: [
+                        { id: 1, text: "Overslept", points: 26 },
+                        { id: 2, text: "Assignment Not Done", points: 20 },
+                        { id: 3, text: "Not Prepared for Test", points: 17 },
+                        { id: 4, text: "Boring Lecture", points: 13 },
+                        { id: 5, text: "Hangover", points: 9 },
+                        { id: 6, text: "Bad Weather", points: 7 },
+                        { id: 7, text: "Friend Convincing Them", points: 5 },
+                        { id: 8, text: "Mental Health Day", points: 3 },
+                    ]
+                },
+                {
+                    question: "Name Something Students Do Right Before an Exam",
+                    answers: [
+                        { id: 1, text: "Last-Minute Revision", points: 28 },
+                        { id: 2, text: "Panic", points: 19 },
+                        { id: 3, text: "Ask Friends for Notes", points: 15 },
+                        { id: 4, text: "Pray", points: 12 },
+                        { id: 5, text: "Google Key Topics", points: 10 },
+                        { id: 6, text: "Cram Overnight", points: 8 },
+                        { id: 7, text: "Drink Coffee", points: 6 },
+                        { id: 8, text: "Check Seating Arrangement", points: 2 },
+                    ]
+                },
+                {
+                    question: "Name Something That Drains a College Student’s Bank Account",
+                    answers: [
+                        { id: 1, text: "Food Delivery", points: 24 },
+                        { id: 2, text: "Shopping", points: 20 },
+                        { id: 3, text: "Fees", points: 18 },
+                        { id: 4, text: "Travel", points: 12 },
+                        { id: 5, text: "Subscriptions", points: 9 },
+                        { id: 6, text: "Parties", points: 8 },
+                        { id: 7, text: "Coffee", points: 6 },
+                        { id: 8, text: "Online Games", points: 3 },
+                    ]
+                },
+                {
+                    question: "Name Something Students Lie About",
+                    answers: [
+                        { id: 1, text: "Studying", points: 26 },
+                        { id: 2, text: "Attendance", points: 21 },
+                        { id: 3, text: "Being Busy", points: 16 },
+                        { id: 4, text: "Assignment Done", points: 12 },
+                        { id: 5, text: "Wake-Up Time", points: 9 },
+                        { id: 6, text: "Grades", points: 7 },
+                        { id: 7, text: "Budget", points: 5 },
+                        { id: 8, text: "Relationship Status", points: 4 },
+                    ]
+                },
+                {
+                    question: "Name Something That Makes a Group Project a Disaster",
+                    answers: [
+                        { id: 1, text: "One Person Doing All the Work", points: 25 },
+                        { id: 2, text: "Someone Not Responding", points: 22 },
+                        { id: 3, text: "Last-Minute Work", points: 16 },
+                        { id: 4, text: "Different Ideas", points: 12 },
+                        { id: 5, text: "Missed Deadlines", points: 9 },
+                        { id: 6, text: "No Leader", points: 7 },
+                        { id: 7, text: "Copy-Paste Research", points: 5 },
+                        { id: 8, text: "Formatting Issues", points: 4 },
+                    ]
+                },
+                {
+                    question: "Name a Place Students Go When They Want to Avoid Studying",
+                    answers: [
+                        { id: 1, text: "Cafeteria", points: 23 },
+                        { id: 2, text: "Friend’s Room", points: 20 },
+                        { id: 3, text: "Bed", points: 17 },
+                        { id: 4, text: "Library (But Not Studying)", points: 13 },
+                        { id: 5, text: "Mall", points: 10 },
+                        { id: 6, text: "Campus Lawn", points: 8 },
+                        { id: 7, text: "Gaming Room", points: 6 },
+                        { id: 8, text: "Washroom (Scrolling)", points: 3 },
+                    ]
+                },
+                {
+                    question: "Name Something That Instantly Exposes a Fresher",
+                    answers: [
+                        { id: 1, text: "Asking Too Many Questions", points: 24 },
+                        { id: 2, text: "Being Overly Excited", points: 19 },
+                        { id: 3, text: "Dressing Too Formal", points: 16 },
+                        { id: 4, text: "Getting Lost on Campus", points: 14 },
+                        { id: 5, text: "Sitting in Front Row", points: 10 },
+                        { id: 6, text: "Calling Seniors 'Sir/Ma’am'", points: 8 },
+                        { id: 7, text: "Actually Taking Notes", points: 6 },
+                        { id: 8, text: "Attending Every Event", points: 3 },
+                    ]
+                }
+
+
+            ];
+
+            gameRounds.forEach(round => round.answers.forEach(ans => ans.revealed = false));
+
+            // --- Game State Variables ---
+            let currentRound = 0;
+            let activeTeam = 1;
+            let strikeCount = 0;
+            let roundPoints = 0;
+            let isStealRound = false;
+            let isRoundActive = false;
+            let isRevealPhase = false;
+
+            // --- Element References ---
+            const questionTextEl = document.getElementById('question-text');
+            const answerBoardEl = document.getElementById('answer-board');
+            const team1ScoreEl = document.getElementById('team-1-score');
+            const team2ScoreEl = document.getElementById('team-2-score');
+            const team1BoxEl = document.getElementById('team-1-box');
+            const team2BoxEl = document.getElementById('team-2-box');
+            const nextRoundBtn = document.getElementById('next-round-btn');
+            const bigXOverlayEl = document.getElementById('big-x-overlay');
+            const introOverlayEl = document.getElementById('intro-overlay');
+            const gameContainerEl = document.getElementById('game-container');
+            const startOverlayEl = document.getElementById('start-overlay');
+            const startBtnEl = document.getElementById('start-btn');
+            const gameOverOverlayEl = document.getElementById('game-over-overlay');
+            const winnerTextEl = document.getElementById('winner-text');
+            const finalScoresTextEl = document.getElementById('final-scores-text');
+            const roundScoreEl = document.getElementById('round-score');
+            const stealOverlayEl = document.getElementById('steal-overlay');
+            const stealTeamTextEl = document.getElementById('steal-team-text');
+
+            // --- Sound Effects ---
+            const introSound = new Audio('family_feud_assets/intro.mp3');
+            introSound.loop = true;
+            const extroSound = new Audio('family_feud_assets/extro.mp3');
+            const correctSound = new Audio('family_feud_assets/correct.mp3');
+            const wrongSound = new Audio('family_feud_assets/wrong.mp3');
+            const clickSound = new Audio('family_feud_assets/click.mp3');
+
+            // --- Game Over Logic ---
+            function handleGameOver() {
+                const finalScore1 = parseInt(team1ScoreEl.textContent);
+                const finalScore2 = parseInt(team2ScoreEl.textContent);
+
+                let winnerMessage = '';
+                if (finalScore1 > finalScore2) {
+                    winnerMessage = 'Team 1 Wins!';
+                } else if (finalScore2 > finalScore1) {
+                    winnerMessage = 'Team 2 Wins!';
+                } else {
+                    winnerMessage = "It's a Tie!";
+                }
+                winnerTextEl.textContent = winnerMessage;
+                finalScoresTextEl.textContent = `${finalScore1} - ${finalScore2}`;
+
+                gameContainerEl.classList.add('hidden');
+                gameOverOverlayEl.classList.remove('hidden');
+
+                extroSound.play().catch(e => console.error("Error playing sound:", e));
+
+                // Confetti for the winner
+                const duration = 5 * 1000;
+                const animationEnd = Date.now() + duration;
+                const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 1001 };
+
+                function randomInRange(min, max) { return Math.random() * (max - min) + min; }
+
+                const interval = setInterval(function () {
+                    const timeLeft = animationEnd - Date.now();
+                    if (timeLeft <= 0) { return clearInterval(interval); }
+                    const particleCount = 50 * (timeLeft / duration);
+                    confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } }));
+                    confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } }));
+                }, 250);
+            }
+
+            // --- Round Management ---
+            function endRound(stealResult) {
+                isRoundActive = false; // Competitive part is over
+                isRevealPhase = true; // Now in reveal-only mode
+                let winningTeam;
+
+                if (stealResult === true) { winningTeam = activeTeam; }
+                else if (stealResult === false) { winningTeam = activeTeam === 1 ? 2 : 1; }
+                else { winningTeam = activeTeam; }
+
+                if (roundPoints > 0) {
+                    if (winningTeam === 1) {
+                        team1ScoreEl.textContent = parseInt(team1ScoreEl.textContent) + roundPoints;
+                    } else {
+                        team2ScoreEl.textContent = parseInt(team2ScoreEl.textContent) + roundPoints;
+                    }
+                }
+                nextRoundBtn.style.display = 'block';
+            }
+
+            function loadRound(roundIndex) {
+                if (roundIndex >= gameRounds.length) {
+                    handleGameOver();
+                    return;
+                }
+
+                currentRound = roundIndex;
+                const roundData = gameRounds[currentRound];
+                questionTextEl.textContent = roundData.question;
+
+                strikeCount = 0;
+                roundPoints = 0;
+                isStealRound = false;
+                isRoundActive = true;
+                isRevealPhase = false;
+                roundScoreEl.textContent = '0';
+                nextRoundBtn.style.display = 'none';
+
+                answerBoardEl.innerHTML = '';
+                const column1 = document.createElement('div');
+                column1.className = 'flex flex-col gap-3 flex-1';
+                const column2 = document.createElement('div');
+                column2.className = 'flex flex-col gap-3 flex-1';
+
+                roundData.answers.forEach((item, index) => {
+                    const answerSlot = document.createElement('div');
+                    answerSlot.id = `answer-${item.id}`;
+                    answerSlot.className = 'answer-slot text-2xl font-bold';
+                    answerSlot.innerHTML = `
+                        <div class="flipper">
+                            <div class="front"><span class="text-4xl text-blue-300">${item.id}</span></div>
+                            <div class="back"><span class="text-xl">${item.text}</span><span class="text-4xl">${item.points}</span></div>
+                        </div>`;
+                    if (item.revealed) answerSlot.classList.add('revealed');
+                    if (index < 4) column1.appendChild(answerSlot); else column2.appendChild(answerSlot);
+                });
+
+                answerBoardEl.appendChild(column1);
+                answerBoardEl.appendChild(column2);
+                updateTeamHighlight();
+            }
+
+            // --- In-Game Actions ---
+            function revealAnswer(number) {
+                const index = number - 1;
+                const roundData = gameRounds[currentRound];
+                if (index < 0 || index >= roundData.answers.length) return;
+                const answerData = roundData.answers[index];
+
+                // Handle revealing answers post-round for the audience
+                if (isRevealPhase) {
+                    if (answerData.revealed) return;
+
+                    answerData.revealed = true;
+                    document.getElementById(`answer-${number}`).classList.add('revealed');
+                    clickSound.currentTime = 0;
+                    clickSound.play().catch(e => console.error("Error playing sound:", e));
+                    return;
+                }
+
+                // Normal game logic below
+                if (isStealRound) {
+                    stealOverlayEl.classList.add('hidden');
+                    const stealSuccessful = !answerData.revealed;
+
+                    if (stealSuccessful) {
+                        answerData.revealed = true;
+                        document.getElementById(`answer-${number}`).classList.add('revealed');
+                        correctSound.currentTime = 0;
+                        correctSound.play();
+                        roundPoints += answerData.points;
+                        roundScoreEl.textContent = roundPoints;
+                    } else {
+                        wrongSound.currentTime = 0;
+                        wrongSound.play();
+                    }
+                    setTimeout(() => endRound(stealSuccessful), 1500);
+                    return;
+                }
+
+                if (answerData.revealed) return;
+
+                answerData.revealed = true;
+                document.getElementById(`answer-${number}`).classList.add('revealed');
+                correctSound.currentTime = 0;
+                correctSound.play();
+                roundPoints += answerData.points;
+                roundScoreEl.textContent = roundPoints;
+
+                if (roundData.answers.every(ans => ans.revealed)) {
+                    setTimeout(() => endRound(null), 1000);
+                }
+            }
+
+            function addStrike() {
+                if (strikeCount >= 3 || !isRoundActive) return;
+
+                wrongSound.currentTime = 0;
+                wrongSound.play();
+                strikeCount++;
+
+                let xContent = '';
+                for (let i = 0; i < strikeCount; i++) xContent += '<span>X</span>';
+                bigXOverlayEl.innerHTML = xContent;
+                bigXOverlayEl.classList.add('show');
+                setTimeout(() => {
+                    bigXOverlayEl.classList.remove('show');
+                    setTimeout(() => { bigXOverlayEl.innerHTML = ''; }, 200);
+                }, 1200);
+
+                if (strikeCount === 3) {
+                    isStealRound = true;
+                    const stealingTeam = activeTeam === 1 ? 2 : 1;
+                    switchTeam();
+
+                    setTimeout(() => {
+                        stealTeamTextEl.textContent = `TEAM ${stealingTeam}`;
+                        stealOverlayEl.classList.remove('hidden');
+                    }, 1500);
+                }
+            }
+
+            function switchTeam() {
+                activeTeam = activeTeam === 1 ? 2 : 1;
+                updateTeamHighlight();
+            }
+
+            function updateTeamHighlight() {
+                team1BoxEl.classList.toggle('active-team', activeTeam === 1);
+                team2BoxEl.classList.toggle('active-team', activeTeam === 2);
+            }
+
+            // --- Event Handlers & Setup ---
+            function handleKeyPress(e) {
+                // Ignore key presses when no round is active (and not in reveal phase)
+                if (!isRoundActive && !isRevealPhase) return;
+
+                // Handle team switching with CTRL + 0
+                if (e.ctrlKey && e.key === '0') {
+                    e.preventDefault();
+                    if (isRoundActive) switchTeam(); // Only switch during an active round
+                    return;
+                }
+
+                const key = e.key.toLowerCase();
+                const number = parseInt(key);
+
+                // Handle revealing an answer (keys 1-8)
+                if (!isNaN(number) && number >= 1 && number <= 8) {
+                    revealAnswer(number);
+                }
+                // Handle a wrong answer (keys 'x' or '0')
+                else if (key === 'x' || key === '0') {
+                    if (isStealRound && isRoundActive) {
+                        // THIS IS THE FIX: Handle a failed steal attempt
+                        stealOverlayEl.classList.add('hidden');
+                        wrongSound.currentTime = 0;
+                        wrongSound.play().catch(e => console.error("Error playing sound:", e));
+                        // Call endRound with 'false' to indicate the steal failed
+                        setTimeout(() => endRound(false), 1200);
+                    } else if (isRoundActive) {
+                        // Handle a regular strike
+                        addStrike();
+                    }
+                }
+            }
+
+            function showIntro() {
+                startOverlayEl.style.opacity = '0';
+                setTimeout(() => {
+                    startOverlayEl.style.display = 'none';
+                }, 500);
+
+                introOverlayEl.classList.remove('hidden');
+                introOverlayEl.style.display = 'flex';
+
+                introSound.play().catch(e => console.error("Error playing intro sound:", e));
+
+                // Launch confetti from the sides
+                const end = Date.now() + (2 * 1000);
+                const colors = ['#fde047', '#a5b4fc', '#ffffff'];
+                (function frame() {
+                    confetti({
+                        particleCount: 3, angle: 60, spread: 55, origin: { x: 0 }, colors: colors
+                    });
+                    confetti({
+                        particleCount: 3, angle: 120, spread: 55, origin: { x: 1 }, colors: colors
+                    });
+                    if (Date.now() < end) { requestAnimationFrame(frame); }
+                }());
+            }
+
+            function startGame() {
+                introOverlayEl.style.opacity = '0';
+                setTimeout(() => introOverlayEl.style.display = 'none', 500);
+                introSound.pause();
+                introSound.currentTime = 0;
+                gameContainerEl.classList.remove('hidden');
+                loadRound(currentRound);
+            }
+
+            nextRoundBtn.addEventListener('click', () => loadRound(currentRound + 1));
+            startBtnEl.addEventListener('click', showIntro, { once: true });
+            introOverlayEl.addEventListener('click', startGame, { once: true });
+            document.addEventListener('keydown', handleKeyPress);
+        });
+    </script>
+</body>
+
+</html>

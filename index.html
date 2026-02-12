@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poéthra Game Collection</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+        :root {
+            --pkmn-blue-dark: #204070;
+            --pkmn-blue-light: #5080c8;
+            --pkmn-red: #c82010;
+            --pkmn-gold: #f8b800;
+            --pkmn-white: #f8f8f8;
+            --pkmn-black: #080808;
+            --pkmn-border: #404040;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            image-rendering: pixelated;
+        }
+
+        body {
+            font-family: 'Press Start 2P', cursive;
+            background-color: var(--pkmn-blue-dark);
+            color: var(--pkmn-white);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+            background-image:
+                linear-gradient(45deg, rgba(255, 255, 255, 0.05) 25%, transparent 25%),
+                linear-gradient(-45deg, rgba(255, 255, 255, 0.05) 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, rgba(255, 255, 255, 0.05) 75%),
+                linear-gradient(-45deg, transparent 75%, rgba(255, 255, 255, 0.05) 75%);
+            background-size: 40px 40px;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 600px;
+            background-color: var(--pkmn-white);
+            border: 4px solid var(--pkmn-border);
+            padding: 4px;
+            box-shadow: 10px 10px 0 rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+
+        .inner-border {
+            border: 2px solid var(--pkmn-border);
+            padding: 20px;
+            background-color: var(--pkmn-blue-light);
+            position: relative;
+        }
+
+        .header {
+            background-color: var(--pkmn-red);
+            border: 4px solid var(--pkmn-black);
+            padding: 15px;
+            margin-bottom: 25px;
+            text-align: center;
+            box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.2);
+        }
+
+        .header h1 {
+            font-size: 1.2rem;
+            color: var(--pkmn-white);
+            text-shadow: 3px 3px 0 var(--pkmn-black);
+            letter-spacing: 2px;
+        }
+
+        .trainer-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            font-size: 0.6rem;
+            color: var(--pkmn-gold);
+            text-shadow: 1px 1px 0 var(--pkmn-black);
+        }
+
+        .game-list {
+            list-style: none;
+        }
+
+        .game-item {
+            margin-bottom: 12px;
+        }
+
+        .game-link {
+            display: block;
+            background-color: var(--pkmn-white);
+            border: 3px solid var(--pkmn-black);
+            padding: 15px;
+            color: var(--pkmn-black);
+            text-decoration: none;
+            font-size: 0.7rem;
+            transition: all 0.1s;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+        }
+
+        .game-link::before {
+            content: '▶';
+            margin-right: 15px;
+            color: var(--pkmn-red);
+            visibility: hidden;
+        }
+
+        .game-link:hover {
+            transform: translateX(10px);
+            background-color: var(--pkmn-gold);
+            border-color: var(--pkmn-red);
+        }
+
+        .game-link:hover::before {
+            visibility: visible;
+        }
+
+        .footer {
+            margin-top: 25px;
+            text-align: center;
+            font-size: 0.5rem;
+            color: var(--pkmn-white);
+            opacity: 0.8;
+            letter-spacing: 1px;
+        }
+
+        /* Animated Pokeball Decor */
+        .pokeball {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background: linear-gradient(to bottom, var(--pkmn-red) 50%, white 50%);
+            border: 2px solid var(--pkmn-black);
+            border-radius: 50%;
+            bottom: 10px;
+            right: 10px;
+            animation: rotate 4s linear infinite;
+        }
+
+        .pokeball::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 8px;
+            height: 8px;
+            background: white;
+            border: 2px solid var(--pkmn-black);
+            border-radius: 50%;
+        }
+
+        @keyframes rotate {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Scanline effect */
+        .scanlines {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%);
+            background-size: 100% 4px;
+            z-index: 1000;
+            pointer-events: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="scanlines"></div>
+
+    <div class="container">
+        <div class="inner-border">
+            <div class="header">
+                <h1>POÉTHRA GAMES</h1>
+            </div>
+
+            <div class="trainer-info">
+                <span>TRAINER: ADITYA</span>
+                <span>BADGES: 5/5</span>
+            </div>
+
+            <nav>
+                <ul class="game-list">
+                    <li class="game-item">
+                        <a href="feud_game.html" class="game-link">POÉTHRA FEUD</a>
+                    </li>
+                    <li class="game-item">
+                        <a href="price_is_right_game.html" class="game-link">THE PRICE IS RIGHT</a>
+                    </li>
+                    <li class="game-item">
+                        <a href="emoji_quiz_game.html" class="game-link">SUPER EMOJI QUIZ</a>
+                    </li>
+                    <li class="game-item">
+                        <a href="higher_lower_spotify.html" class="game-link">SPOTIFY HIGHER/LOWER</a>
+                    </li>
+                    <li class="game-item">
+                        <a href="precision_guessing.html" class="game-link">PRECISION GUESSING</a>
+                    </li>
+                </ul>
+            </nav>
+
+            <div class="footer">
+                © 2026 POÉTHRA MULTIMEDIA
+            </div>
+
+            <div class="pokeball"></div>
+        </div>
+    </div>
+</body>
+
+</html>
