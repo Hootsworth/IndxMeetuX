@@ -1189,6 +1189,45 @@
             // 0 = no one gets points, next
             if (e.key === '0') { next(); return; }
         });
+
+        // Presenter Mode Logic
+        (function () {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('mode') !== 'presenter') return;
+
+            console.log("Presenter Mode Active");
+
+            // Click to Forward
+            document.addEventListener('click', (e) => {
+                if (e.target.closest('button') || e.target.closest('a') || e.target.closest('input')) return;
+
+                const startActive = document.getElementById('start-screen').classList.contains('active');
+                if (startActive) {
+                    initGame();
+                    return;
+                }
+
+                const gameActive = document.getElementById('game-screen').classList.contains('active');
+                if (!gameActive) return;
+
+                if (!isRevealed) {
+                    revealAnswer();
+                } else {
+                    awardPoint(0); // Default to Team 1
+                    next();
+                }
+            });
+
+            // Swipe to Skip
+            let touchstartX = 0;
+            document.addEventListener('touchstart', e => { touchstartX = e.changedTouches[0].screenX; }, false);
+            document.addEventListener('touchend', e => {
+                const dx = e.changedTouches[0].screenX - touchstartX;
+                if (Math.abs(dx) > 50) {
+                    next();
+                }
+            }, false);
+        })();
     </script>
 </body>
 

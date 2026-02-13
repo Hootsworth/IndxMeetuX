@@ -642,6 +642,37 @@
                 if (e.key === 'ArrowDown') revealAnswer();
             }
         });
+
+        // Presenter Mode Logic
+        (function () {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('mode') !== 'presenter') return;
+
+            console.log("Presenter Mode Active");
+
+            // Click to Forward
+            document.addEventListener('click', (e) => {
+                if (e.target.closest('button') || e.target.closest('a') || e.target.closest('input')) return;
+                if (!gameScreen.classList.contains('active')) return;
+
+                if (isShowingAnswer) {
+                    awardPointAndNext(1); // Default to Team 1
+                } else {
+                    revealAnswer();
+                }
+            });
+
+            // Swipe to Skip
+            let touchstartX = 0;
+            document.addEventListener('touchstart', e => { touchstartX = e.changedTouches[0].screenX; }, false);
+            document.addEventListener('touchend', e => {
+                const dx = e.changedTouches[0].screenX - touchstartX;
+                if (Math.abs(dx) > 50 && gameScreen.classList.contains('active')) {
+                    currentQuestionIndex++;
+                    displayQuestion();
+                }
+            }, false);
+        })();
     </script>
 </body>
 

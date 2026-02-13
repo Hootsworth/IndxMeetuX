@@ -324,6 +324,42 @@
 
         // Initialize
         updateBadges();
+
+        // Presenter Mode Toggle
+        (function () {
+            const header = document.querySelector('.header');
+            const toggle = document.createElement('div');
+            toggle.style.cssText = 'margin-top: 10px; font-size: 0.5rem; color: #fff; opacity: 0.5; cursor: pointer;';
+            toggle.id = 'presenter-toggle';
+
+            let isPresenter = localStorage.getItem('presenter_mode') === 'true';
+
+            function updateToggleUI() {
+                toggle.textContent = isPresenter ? '[ PRESENTER MODE: ON ]' : '[ PRESENTER MODE: OFF ]';
+                toggle.style.color = isPresenter ? 'var(--pkmn-gold)' : '#fff';
+                toggle.style.opacity = isPresenter ? '1' : '0.5';
+
+                // Update links
+                document.querySelectorAll('.game-link').forEach(link => {
+                    let url = new URL(link.href, window.location.href);
+                    if (isPresenter) {
+                        url.searchParams.set('mode', 'presenter');
+                    } else {
+                        url.searchParams.delete('mode');
+                    }
+                    link.href = url.toString();
+                });
+            }
+
+            toggle.addEventListener('click', () => {
+                isPresenter = !isPresenter;
+                localStorage.setItem('presenter_mode', isPresenter);
+                updateToggleUI();
+            });
+
+            header.appendChild(toggle);
+            updateToggleUI();
+        })();
     </script>
 </body>
 

@@ -319,6 +319,38 @@
             init();
         }
 
+        // Presenter Mode Logic
+        (function () {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('mode') !== 'presenter') return;
+
+            console.log("Presenter Mode Active");
+
+            // Click to Forward
+            document.addEventListener('click', (e) => {
+                if (e.target.closest('button') || e.target.closest('a') || e.target.closest('input')) return;
+                if (e.target.closest('.artist-card')) return; // Already handles click
+
+                const gameActive = document.getElementById('game-screen').classList.contains('active');
+                if (gameActive) {
+                    advanceArtist(0); // Default to first artist
+                }
+            });
+
+            // Swipe to Skip Matchup
+            let touchstartX = 0;
+            document.addEventListener('touchstart', e => { touchstartX = e.changedTouches[0].screenX; }, false);
+            document.addEventListener('touchend', e => {
+                const dx = e.changedTouches[0].screenX - touchstartX;
+                if (Math.abs(dx) > 50) {
+                    const gameActive = document.getElementById('game-screen').classList.contains('active');
+                    if (gameActive) {
+                        advanceArtist(Math.floor(Math.random() * 2)); // Random skip
+                    }
+                }
+            }, false);
+        })();
+
         async function getAccessToken() {
             const id = localStorage.getItem(API_KEY_ID);
             const secret = localStorage.getItem(API_KEY_SECRET);
