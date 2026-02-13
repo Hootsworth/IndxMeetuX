@@ -367,6 +367,13 @@
                 currentIdx++;
                 load(currentIdx);
             } else {
+                // Award Badge
+                try {
+                    const badges = JSON.parse(localStorage.getItem('poethra_badges') || '{}');
+                    badges['precision'] = true;
+                    localStorage.setItem('poethra_badges', JSON.stringify(badges));
+                } catch (e) { console.error("Badge save failed", e); }
+
                 alert("The collection is complete. Returning to start.");
                 location.reload();
             }

@@ -415,6 +415,7 @@
         let currentRightArtist = null;
         let currentAudio = null;
         let playingBtn = null;
+        let currentStreak = 0;
 
         const popularArtists = [
             'Taylor Swift', 'Drake', 'The Weeknd', 'Billie Eilish', 'Ariana Grande',
@@ -591,8 +592,23 @@
 
             setTimeout(() => {
                 showResult(correct);
+                if (correct) {
+                    currentStreak++;
+                    if (currentStreak === 10) awardSpotifyBadge();
+                } else {
+                    currentStreak = 0;
+                }
                 setTimeout(nextRoundTransition, 1500);
             }, 1000);
+        }
+
+        function awardSpotifyBadge() {
+            try {
+                const badges = JSON.parse(localStorage.getItem('poethra_badges') || '{}');
+                badges['spotify'] = true;
+                localStorage.setItem('poethra_badges', JSON.stringify(badges));
+                alert("STORM BADGE EARNED! 🌫️\n10 ARTIST STREAK!");
+            } catch (e) { console.error("Badge save failed", e); }
         }
 
         function animateValue(id, start, end, duration) {

@@ -585,6 +585,13 @@
             winnerMessageEl.innerHTML = winnerText + "<br>GAME OVER";
             showScreen(endScreen);
             launchConfetti();
+
+            // Save badge data
+            try {
+                const badges = JSON.parse(localStorage.getItem('poethra_badges') || '{}');
+                badges['emoji'] = true;
+                localStorage.setItem('poethra_badges', JSON.stringify(badges));
+            } catch (e) { console.error("Badge save failed", e); }
         }
 
         function launchConfetti() {

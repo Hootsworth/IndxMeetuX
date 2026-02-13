@@ -558,6 +558,13 @@
 
                 extroSound.play().catch(e => console.error("Error playing sound:", e));
 
+                // Save badge data
+                try {
+                    const badges = JSON.parse(localStorage.getItem('poethra_badges') || '{}');
+                    badges['feud'] = true;
+                    localStorage.setItem('poethra_badges', JSON.stringify(badges));
+                } catch (e) { console.error("Badge save failed", e); }
+
                 // Confetti for the winner
                 const duration = 5 * 1000;
                 const animationEnd = Date.now() + duration;

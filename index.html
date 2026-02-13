@@ -169,17 +169,75 @@
             }
         }
 
-        /* Scanline effect */
-        .scanlines {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%);
-            background-size: 100% 4px;
-            z-index: 1000;
-            pointer-events: none;
+        /* Badge Styles */
+        .badge-case {
+            display: flex;
+            justify-content: space-between;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 10px;
+            border: 2px solid var(--pkmn-black);
+            margin-bottom: 20px;
+        }
+
+        .badge-slot {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.2rem;
+            filter: grayscale(1) brightness(0.5);
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+        }
+
+        .badge-slot.earned {
+            filter: grayscale(0) brightness(1);
+            transform: scale(1.1);
+            text-shadow: 0 0 10px var(--pkmn-gold);
+        }
+
+        .badge-slot::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.8) 0%, transparent 70%);
+            opacity: 0;
+        }
+
+        .badge-slot.earned::after {
+            animation: shine 2s infinite;
+        }
+
+        @keyframes shine {
+            0% {
+                opacity: 0;
+                transform: scale(0.5);
+            }
+
+            50% {
+                opacity: 0.5;
+                transform: scale(1.2);
+            }
+
+            100% {
+                opacity: 0;
+                transform: scale(0.5);
+            }
+        }
+
+        .reset-data {
+            position: absolute;
+            top: -15px;
+            right: 10px;
+            font-size: 0.4rem;
+            color: var(--pkmn-black);
+            cursor: pointer;
+            opacity: 0.3;
+        }
+
+        .reset-data:hover {
+            opacity: 1;
         }
     </style>
 </head>
@@ -195,7 +253,16 @@
 
             <div class="trainer-info">
                 <span>TRAINER: ADITYA</span>
-                <span>BADGES: 5/5</span>
+                <span id="badge-count">BADGES: 0/6</span>
+            </div>
+
+            <div class="badge-case">
+                <div class="badge-slot" id="badge-feud" title="Zephyr Badge (Feud)">🌪️</div>
+                <div class="badge-slot" id="badge-price" title="Hive Badge (Price)">🐝</div>
+                <div class="badge-slot" id="badge-emoji" title="Plain Badge (Emoji)">⚪</div>
+                <div class="badge-slot" id="badge-spotify" title="Fog Badge (Spotify)">🌫️</div>
+                <div class="badge-slot" id="badge-precision" title="Storm Badge (Precision)">⛈️</div>
+                <div class="badge-slot" id="badge-tournament" title="Mineral Badge (Tournament)">💎</div>
             </div>
 
             <nav>
@@ -215,6 +282,10 @@
                     <li class="game-item">
                         <a href="precision_guessing.html" class="game-link">PRECISION GUESSING</a>
                     </li>
+                    <li class="game-item">
+                        <a href="tournament_game.html" class="game-link"
+                            style="color: var(--pkmn-red); font-weight: bold;">CHAMPIONSHIP TOURNAMENT</a>
+                    </li>
                 </ul>
             </nav>
 
@@ -223,8 +294,37 @@
             </div>
 
             <div class="pokeball"></div>
+            <div class="reset-data" onclick="resetProgress()">RESET DATA</div>
         </div>
     </div>
+
+    <script>
+        function updateBadges() {
+            const badges = JSON.parse(localStorage.getItem('poethra_badges') || '{}');
+            const ids = ['feud', 'price', 'emoji', 'spotify', 'precision', 'tournament'];
+            let earnedCount = 0;
+
+            ids.forEach(id => {
+                const el = document.getElementById('badge-' + id);
+                if (badges[id]) {
+                    el.classList.add('earned');
+                    earnedCount++;
+                }
+            });
+
+            document.getElementById('badge-count').textContent = `BADGES: ${earnedCount}/6`;
+        }
+
+        function resetProgress() {
+            if (confirm("DELETE ALL SAVE DATA?")) {
+                localStorage.removeItem('poethra_badges');
+                location.reload();
+            }
+        }
+
+        // Initialize
+        updateBadges();
+    </script>
 </body>
 
 </html>
