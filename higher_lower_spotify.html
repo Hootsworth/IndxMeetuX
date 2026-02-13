@@ -363,13 +363,36 @@
         let currentRightArtist = null;
 
         const popularArtists = [
-            'Taylor Swift', 'The Weeknd', 'Bad Bunny', 'Drake', 'Rihanna',
-            'Justin Bieber', 'Ed Sheeran', 'Ariana Grande', 'Eminem', 'BTS',
-            'Kanye West', 'Billie Eilish', 'Dua Lipa', 'Bruno Mars', 'Kendrick Lamar',
-            'Post Malone', 'SZA', 'Coldplay', 'Lady Gaga', 'Travis Scott', 'Beyonce',
-            'Lana Del Rey', 'Harry Styles', 'Arctic Monkeys', 'Imagine Dragons',
-            'Doja Cat', 'Olivia Rodrigo', 'Lil Nas X', 'Miley Cyrus', 'Adele'
+            'Taylor Swift', 'Drake', 'The Weeknd', 'Billie Eilish', 'Ariana Grande',
+            'Ed Sheeran', 'Justin Bieber', 'Dua Lipa', 'Olivia Rodrigo', 'Bad Bunny',
+            'Travis Scott', 'Kendrick Lamar', 'Post Malone', 'SZA', 'Harry Styles',
+            'Doja Cat', 'Imagine Dragons', 'Coldplay', 'Lana Del Rey', 'Bruno Mars',
+            'Rihanna', 'Eminem', 'Kanye West', 'Tyler, The Creator', 'Frank Ocean',
+            'Arctic Monkeys', 'One direction', 'Selena Gomez', 'Radiohead', 'Micheal Jackson',
+            'Linkin Park', 'Twenty One Pilots', 'Jonas brothers', 'Justin Timberlake', 'Alan Walker',
+            'Charlie Puth', 'Calvin Harris', 'David Guetta', 'Marshmello', 'Skrillex',
+            'BTS', 'BLACKPINK', 'ROSÉ', 'Arijit Singh', 'Pritam',
+            'Shreya Ghoshal', 'A. R. Rahman', 'Neha Kakkar', 'Badshah', 'Diljit Dosanjh'
         ];
+
+        let artistPool = [];
+
+        function shuffle(array) {
+            let currentIndex = array.length, randomIndex;
+            while (currentIndex != 0) {
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex--;
+                [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+            }
+            return array;
+        }
+
+        function refillPool(excludeName) {
+            artistPool = shuffle([...popularArtists]);
+            if (excludeName) {
+                artistPool = artistPool.filter(name => name !== excludeName);
+            }
+        }
 
         // --- Auth ---
         async function saveCredentials() {
@@ -421,9 +444,9 @@
         }
 
         async function setupInitialRound() {
-            let list = [...popularArtists];
-            const name1 = list.splice(Math.floor(Math.random() * list.length), 1)[0];
-            const name2 = list.splice(Math.floor(Math.random() * list.length), 1)[0];
+            refillPool();
+            const name1 = artistPool.pop();
+            const name2 = artistPool.pop();
             currentLeftArtist = await fetchArtist(name1);
             currentRightArtist = await fetchArtist(name2);
             updateUI();
@@ -510,9 +533,11 @@
                 // Swap artists data
                 currentLeftArtist = currentRightArtist;
 
-                // Fetch next artist for the right
-                let list = popularArtists.filter(n => n !== currentLeftArtist.name);
-                const nextName = list[Math.floor(Math.random() * list.length)];
+                // Fetch next artist for the right from the pool
+                if (artistPool.length === 0) {
+                    refillPool(currentLeftArtist.name);
+                }
+                const nextName = artistPool.pop();
                 currentRightArtist = await fetchArtist(nextName);
 
                 // Instantly swap content without transition
