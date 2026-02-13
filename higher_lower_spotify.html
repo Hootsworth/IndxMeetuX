@@ -204,6 +204,46 @@
             color: black;
         }
 
+        .preview-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid white;
+            color: white;
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            margin: 15px auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.2s;
+            position: relative;
+            z-index: 20;
+        }
+
+        .preview-btn:hover {
+            background: var(--primary);
+            border-color: var(--primary);
+            transform: scale(1.1);
+        }
+
+        .preview-btn.playing {
+            background: var(--primary);
+            border-color: white;
+            animation: pulse 1s infinite alternate;
+        }
+
+        @keyframes pulse {
+            from {
+                transform: scale(1);
+            }
+
+            to {
+                transform: scale(1.15);
+            }
+        }
+
         /* VS Element - Flat */
         .vs-circle {
             position: absolute;
@@ -328,7 +368,9 @@
                 <div class="has">HAS A POPULARITY SCORE OF</div>
                 <div class="popularity-score" id="left-score">0</div>
                 <div class="popularity-label">OUT OF 100</div>
-                <div style="font-size: 0.6rem; opacity: 0.3; margin-top: 40px; letter-spacing: 2px;">POÉTHRA</div>
+                <button class="preview-btn" onclick="playArtistPreview(this, currentLeftArtist.name)"
+                    title="Play Preview">🎵</button>
+                <div style="font-size: 0.6rem; opacity: 0.3; margin-top: 20px; letter-spacing: 2px;">POÉTHRA</div>
             </div>
         </div>
 
@@ -347,6 +389,8 @@
                 <div id="right-score-reveal" class="hidden">
                     <div class="popularity-score" id="right-score">0</div>
                     <div class="popularity-label">OUT OF 100</div>
+                    <button class="preview-btn" onclick="playArtistPreview(this, currentRightArtist.name)"
+                        title="Play Preview">🎵</button>
                 </div>
                 <div class="has" style="margin-top: 20px;">POPULARITY SCORE THAN <span id="ref-artist-name">...</span>
                 </div>
@@ -361,6 +405,8 @@
         let accessToken = '';
         let currentLeftArtist = null;
         let currentRightArtist = null;
+        let currentAudio = null;
+        let playingBtn = null;
 
         const popularArtists = [
             'Taylor Swift', 'Drake', 'The Weeknd', 'Billie Eilish', 'Ariana Grande',
@@ -452,6 +498,47 @@
             updateUI();
         }
 
+        async function playArtistPreview(btn, artistName) {
+            if (currentAudio) {
+                currentAudio.pause();
+                const wasPlaying = playingBtn;
+                if (playingBtn) playingBtn.classList.remove('playing');
+                playingBtn = null;
+                const prevAudio = currentAudio;
+                currentAudio = null;
+                if (wasPlaying === btn) return;
+            }
+
+            btn.classList.add('playing');
+            playingBtn = btn;
+
+            try {
+                // iTunes Search API for song preview
+                const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(artistName)}&media=music&entity=song&limit=1`);
+                const data = await res.json();
+
+                if (data.results && data.results.length > 0) {
+                    const track = data.results[0];
+                    currentAudio = new Audio(track.previewUrl);
+                    currentAudio.play();
+
+                    currentAudio.onended = () => {
+                        btn.classList.remove('playing');
+                        playingBtn = null;
+                        currentAudio = null;
+                    };
+                } else {
+                    btn.classList.remove('playing');
+                    playingBtn = null;
+                    alert("No preview found for " + artistName);
+                }
+            } catch (err) {
+                btn.classList.remove('playing');
+                playingBtn = null;
+                console.error("iTunes API error:", err);
+            }
+        }
+
         function updateUI() {
             // Left
             document.getElementById('left-name').textContent = currentLeftArtist.name;
@@ -513,6 +600,14 @@
         }
 
         async function nextRoundTransition() {
+            // Stop any playing audio on transition
+            if (currentAudio) {
+                currentAudio.pause();
+                if (playingBtn) playingBtn.classList.remove('playing');
+                currentAudio = null;
+                playingBtn = null;
+            }
+
             // The magic happens here: Right becomes Left.
 
             const leftPanel = document.getElementById('left-panel');
